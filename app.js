@@ -1,5 +1,5 @@
 const config = require('./utils/config')
-// const logger = require('./utils/logger')
+const logger = require('./utils/logger')
 
 const express = require('express')
 const app = express()
@@ -8,6 +8,7 @@ const cors = require('cors') // Not sure this is needed yet
 const mongoose = require('mongoose')
 const blogsRouter = require('./controllers/blogs')
 
+logger.info('Connecting to mongoDB...')
 const mongoUrl = config.MONGODB_URI
 mongoose.connect(mongoUrl)
 
