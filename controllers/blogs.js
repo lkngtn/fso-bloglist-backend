@@ -1,9 +1,30 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const ObjectId = require('mongoose').Types.ObjectId
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
   return response.json(blogs)
+})
+
+blogsRouter.get('/:id', async (request, response) => {
+  if (!ObjectId.isValid(request.params.id)) {
+    response.status(400).send('invalid id').end()
+  }
+  const blog = await Blog.findById(request.params.id)
+  if (blog) {
+    response.json(blog)
+  } else {
+    response.status(404).end()
+  }
+})
+
+blogsRouter.delete('/:id', async (request, response) => {
+  if (!ObjectId.isValid(request.params.id)) {
+    response.status(400).send('invalid id').end()
+  }
+  await Blog.findByIdAndDelete(request.params.id)
+  response.status(204).end()
 })
 
 blogsRouter.post('/', async (request, response) => {
