@@ -176,12 +176,16 @@ describe('updating an existing blog', () => {
       title: 'a new title',
       author: 'fake name',
       url: 'www.afakeurl.com',
-      likes: 0
+      likes: 5
     }
-    await api
+    const response = await api
       .put(`/api/blogs/${testId}`)
       .send(update)
       .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const addedBlog = response.body
+    expect(addedBlog.likes).toBe(5)
 
     const blogsAtEnd = await helper.blogsInDb()
     expect(blogsAtEnd).toHaveLength(helper.listWithManyBlogs.length)
@@ -191,7 +195,50 @@ describe('updating an existing blog', () => {
       'a new title'
     )
   })
+
+  test('succeeds without likes', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const testId = blogsAtStart[0].id
+
+    const update = {
+      title: 'a new title',
+      author: 'fake name',
+      url: 'www.afakeurl.com'
+    }
+    const response = await api
+      .put(`/api/blogs/${testId}`)
+      .send(update)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const addedBlog = response.body
+    expect(addedBlog.likes).toBe(0)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    expect(blogsAtEnd).toHaveLength(helper.listWithManyBlogs.length)
+
+    const titles = blogsAtEnd.map(blog => blog.title)
+    expect(titles).toContain(
+      'a new title'
+    )
+  })
+
+  test('fails without a url', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const testId = blogsAtStart[0].id
+
+    const update = {
+      title: 'a new title',
+      author: 'fake name',
+    }
+    const response = await api
+      .put(`/api/blogs/${testId}`)
+      .send(update)
+      .expect(400)
+  })
 })
+
+
 
 afterAll(() => {
   mongoose.connection.close()
