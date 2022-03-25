@@ -1,5 +1,5 @@
-const mongoose = require('mongoose')
 const supertest = require('supertest')
+const mongoose = require('mongoose')
 const helper = require('./test_helper')
 
 const app = require('../app')
@@ -164,6 +164,32 @@ describe('deleting a blog', () => {
     await api
       .delete(`/api/blogs/${testId}`)
       .expect(400)
+  })
+})
+
+describe('updating an existing blog', () => {
+  test('succeeds with valid data', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const testId = blogsAtStart[0].id
+
+    const update = {
+      title: 'a new title',
+      author: 'fake name',
+      url: 'www.afakeurl.com',
+      likes: 0
+    }
+    await api
+      .put(`/api/blogs/${testId}`)
+      .send(update)
+      .expect(200)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    expect(blogsAtEnd).toHaveLength(helper.listWithManyBlogs.length)
+
+    const titles = blogsAtEnd.map(blog => blog.title)
+    expect(titles).toContain(
+      'a new title'
+    )
   })
 })
 

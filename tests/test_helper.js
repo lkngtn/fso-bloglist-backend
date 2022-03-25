@@ -1,4 +1,3 @@
-const blog = require('../models/blog')
 const Blog = require('../models/blog')
 
 const listWithOneBlog = [
@@ -71,7 +70,7 @@ const nonExistingId = async () => {
   return blog._id.toString()
 }
 
-const blogsInDb = async() => {
+const blogsInDb = async () => {
   const blogs = await Blog.find({})
   return blogs.map(blog => blog.toJSON())
 }
