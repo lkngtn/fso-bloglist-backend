@@ -231,7 +231,7 @@ describe('updating an existing blog', () => {
       title: 'a new title',
       author: 'fake name',
     }
-    const response = await api
+    await api
       .put(`/api/blogs/${testId}`)
       .send(update)
       .expect(400)
