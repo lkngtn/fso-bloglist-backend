@@ -1,9 +1,11 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const ObjectId = require('mongoose').Types.ObjectId
 
 blogsRouter.get('/', async (request, response) => {
-  const blogs = await Blog.find({})
+  const blogs = await Blog
+    .find({}).populate('user', { username: 1, name: 1 })
   return response.json(blogs)
 })
 
@@ -28,14 +30,22 @@ blogsRouter.delete('/:id', async (request, response) => {
 })
 
 blogsRouter.post('/', async (request, response) => {
-  if (!('likes' in request.body)) {
-    request.body['likes'] = 0
+  const body = request.body
+
+  const user = await User.findById(body.userId)
+
+  if (!('likes' in body)) {
+    body['likes'] = 0
   }
-  if (!('title' in request.body) || !('url' in request.body)) {
+  if (!('title' in body) || !('url' in body)) {
     return response.status(400).end()
   }
-  const blog = new Blog(request.body)
+
+  const blog = new Blog({ user: user._id, ...body })
   const savedBlog = await blog.save()
+  user.blogs = user.blogs.concat(savedBlog._id)
+  await user.save()
+
   return response.status(201).json(savedBlog)
 })
 
@@ -51,7 +61,6 @@ blogsRouter.put('/:id', async (request, response) => {
   }
   const update = {
     title: request.body.title,
-    author: request.body.author,
     url: request.body.url,
     likes: request.body.likes
   }
