@@ -238,8 +238,6 @@ describe('updating an existing blog', () => {
   })
 })
 
-
-
 afterAll(() => {
   mongoose.connection.close()
 })
