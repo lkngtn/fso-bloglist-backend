@@ -13,6 +13,12 @@ const testUser = {
   password: 'thisisatestpass'
 }
 
+const testUser2 = {
+  username: 'testUser2',
+  name: 'Testy mcTester2',
+  password: 'thisisatestpass'
+}
+
 beforeEach(async () => {
   await User.deleteMany({})
 
@@ -26,11 +32,26 @@ beforeEach(async () => {
     .send({ username: testUser.username, password: testUser.password })
 
   testUser.token = result.body.token
+  const userQuery = await User.findOne({ username: testUser.username })
+  testUser.id = userQuery._id
+
+  await api
+    .post('/api/users')
+    .send(testUser2)
+    .expect(201)
+
+  const result2 = await api
+    .post('/api/login')
+    .send({ username: testUser2.username, password: testUser2.password })
+
+  testUser2.token = result2.body.token
+  const userQuery2 = await User.findOne({ username: testUser2.username })
+  testUser2.id = userQuery2._id
 
   await Blog.deleteMany({})
 
   const blogObjects = helper.listWithManyBlogs
-    .map(blog => new Blog(blog))
+    .map(blog => new Blog({ user: testUser.id, ...blog }))
   const promiseArray = blogObjects.map(blog => blog.save())
   await Promise.all(promiseArray)
 })
@@ -71,7 +92,6 @@ describe('viewing a specific blog', () => {
       .get(`/api/blogs/${blogToView.id}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
-
     expect(resultBlog.body).toEqual(blogToView)
   })
 
@@ -173,6 +193,7 @@ describe('deleting a blog', () => {
     const blogToDelete = blogsAtStart[0]
     await api
       .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `bearer ${testUser.token}`)
       .expect(204)
   })
 
@@ -180,6 +201,7 @@ describe('deleting a blog', () => {
     const testId = await helper.nonExistingId()
     await api
       .delete(`/api/blogs/${testId}`)
+      .set('Authorization', `bearer ${testUser.token}`)
       .expect(204)
   })
 
@@ -187,7 +209,25 @@ describe('deleting a blog', () => {
     const testId = 'thisIsNotAValidId'
     await api
       .delete(`/api/blogs/${testId}`)
+      .set('Authorization', `bearer ${testUser.token}`)
       .expect(400)
+  })
+
+  test('fails with status 401 without token', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .expect(401)
+  })
+
+  test('fails with status 401 with wrong user', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `bearer ${testUser2.token}`)
+      .expect(401)
   })
 })
 
