@@ -4,9 +4,29 @@ const helper = require('./test_helper')
 
 const app = require('../app')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const api = supertest(app)
 
+const testUser = {
+  username: 'testUser',
+  name: 'Testy mcTester',
+  password: 'thisisatestpass'
+}
+
 beforeEach(async () => {
+  await User.deleteMany({})
+
+  await api
+    .post('/api/users')
+    .send(testUser)
+    .expect(201)
+
+  const result = await api
+    .post('/api/login')
+    .send({ username: testUser.username, password: testUser.password })
+
+  testUser.token = result.body.token
+
   await Blog.deleteMany({})
 
   const blogObjects = helper.listWithManyBlogs
@@ -80,6 +100,7 @@ describe('addition of a new blog', () => {
     }
     await api
       .post('/api/blogs')
+      .set('Authorization', `bearer ${testUser.token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -102,6 +123,7 @@ describe('addition of a new blog', () => {
 
     const response = await api
       .post('/api/blogs')
+      .set('Authorization', `bearer ${testUser.token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -126,6 +148,7 @@ describe('addition of a new blog', () => {
     }
     await api
       .post('/api/blogs')
+      .set('Authorization', `bearer ${testUser.token}`)
       .send(newBlog)
       .expect(400)
   })
@@ -138,6 +161,7 @@ describe('addition of a new blog', () => {
     }
     await api
       .post('/api/blogs')
+      .set('Authorization', `bearer ${testUser.token}`)
       .send(newBlog)
       .expect(400)
   })
